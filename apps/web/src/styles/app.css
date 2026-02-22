@@ -53,7 +53,8 @@ button:disabled {
 }
 
 textarea,
-input[type="number"] {
+input[type="number"],
+input[type="text"] {
   width: 100%;
   margin: 8px 0 12px;
   border: 1px solid #98846e;
@@ -93,14 +94,21 @@ input[type="number"] {
 .board-wrap {
   width: 100%;
   overflow-x: auto;
+  background: linear-gradient(145deg, #f3d6a3, #deb67e);
+  border-radius: 10px;
+  padding: 12px;
+  border: 1px solid #8a643b;
+  box-shadow: inset 0 1px 0 #ffe7bf, inset 0 -1px 0 #bb8a56, 0 4px 12px rgba(52, 30, 11, 0.25);
 }
 
 .board-grid {
   display: grid;
-  gap: 2px;
-  background: #815c3f;
-  border: 2px solid #4a321f;
-  padding: 4px;
+  gap: 0;
+  background: radial-gradient(circle at 20% 10%, rgba(255, 235, 190, 0.45), rgba(212, 160, 94, 0.15) 35%, rgba(180, 128, 71, 0.2) 70%),
+    repeating-linear-gradient(0deg, rgba(120, 78, 35, 0.08) 0 1px, rgba(0, 0, 0, 0) 1px 5px),
+    linear-gradient(120deg, #e8bf85, #d5a66d);
+  border: 2px solid #5f3f20;
+  padding: 10px;
   border-radius: 8px;
 }
 
@@ -108,39 +116,92 @@ input[type="number"] {
   position: relative;
   width: 100%;
   aspect-ratio: 1;
-  border: 1px solid #9d7d59;
-  background: #e8c89a;
+  border: 0;
+  background: transparent;
   padding: 0;
+}
+
+.line {
+  position: absolute;
+  background: #2e1f0f;
+  opacity: 0.85;
+}
+
+.line-h {
+  left: 0;
+  right: 0;
+  top: calc(50% - 0.5px);
+  height: 1px;
+}
+
+.line-v {
+  top: 0;
+  bottom: 0;
+  left: calc(50% - 0.5px);
+  width: 1px;
+}
+
+.edge-left .line-h {
+  left: 50%;
+}
+
+.edge-right .line-h {
+  right: 50%;
+}
+
+.edge-top .line-v {
+  top: 50%;
+}
+
+.edge-bottom .line-v {
+  bottom: 50%;
+}
+
+.star-point {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 10%;
+  height: 10%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: #23170c;
+  opacity: 0.95;
 }
 
 .stone {
   position: absolute;
-  inset: 12%;
+  inset: 9%;
   border-radius: 50%;
-  display: grid;
-  place-items: center;
-  font-size: 0.65rem;
-  font-weight: 600;
+  box-shadow: 0 3px 4px rgba(12, 9, 6, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 
 .stone.black {
-  background: #1f1f1f;
-  color: #f2f2f2;
+  background: radial-gradient(circle at 28% 24%, #696969 0%, #1d1d1d 48%, #020202 100%);
 }
 
 .stone.white {
-  background: #f8f8f8;
-  color: #333;
-  border: 1px solid #999;
+  background: radial-gradient(circle at 30% 26%, #ffffff 0%, #f5f5f5 55%, #d9d9d9 100%);
+  border: 1px solid #9f9f9f;
+}
+
+.stone.preview {
+  opacity: 0.62;
+  box-shadow: inset 0 0 0 2px rgba(31, 95, 91, 0.35);
 }
 
 .point-mark {
   position: absolute;
-  inset: 0;
+  right: 6%;
+  top: 8%;
   display: grid;
   place-items: center;
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: 0.72rem;
+  background: rgba(255, 255, 255, 0.45);
+  border-radius: 999px;
+  padding: 0 5px;
+  min-width: 16px;
 }
 
 .point-mark.plus {

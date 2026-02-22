@@ -17,6 +17,9 @@ export function RoomPage() {
   const [bidValue, setBidValue] = useState(10);
   const [moveKind, setMoveKind] = useState<"NORMAL" | "HIDDEN">("NORMAL");
   const [scanMode, setScanMode] = useState(false);
+  const isBaseConfirmed = state.baseBuildConfirmed[localPlayer];
+  const basePreviewCoords =
+    state.phase === "BASE_BUILD" && !isBaseConfirmed ? state.baseBuildSelections[localPlayer] : [];
 
   if (!session) {
     return (
@@ -30,6 +33,9 @@ export function RoomPage() {
 
   const onBoardClick = (coord: Coord) => {
     if (state.phase === "BASE_BUILD") {
+      if (isBaseConfirmed) {
+        return;
+      }
       dispatchLocalAction({ type: "PlaceBaseStone", player: localPlayer, coord });
       return;
     }
@@ -63,7 +69,8 @@ export function RoomPage() {
 
     if (state.phase === "TURN_BETTING_R1" || state.phase === "TURN_BETTING_R2") {
       const round = state.phase === "TURN_BETTING_R1" ? 1 : 2;
-      const submitted = round === 1 ? state.bids.r1?.[localPlayer] !== undefined : state.bids.r2?.[localPlayer] !== undefined;
+      const bidValueForLocal = (round === 1 ? state.bids.r1?.[localPlayer] : state.bids.r2?.[localPlayer]) ?? -1;
+      const submitted = bidValueForLocal >= state.config.bidMin;
       return (
         <TurnBettingPanel
           round={round}
@@ -121,7 +128,7 @@ export function RoomPage() {
       <section className="room-content">
         <div className="left-column">
           {renderPhasePanel()}
-          <Board state={state} localPlayer={localPlayer} onCellClick={onBoardClick} />
+          <Board state={state} localPlayer={localPlayer} basePreviewCoords={basePreviewCoords} onCellClick={onBoardClick} />
         </div>
         <HUD state={state} score={score} events={events} localPlayer={localPlayer} remoteStatus={remoteStatus} />
       </section>

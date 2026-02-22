@@ -209,7 +209,7 @@ function assignColorsAndStartMain(
 }
 
 function resolveTurnBidding(state: GameState, events: EngineEvent[]): void {
-  if (state.bids.r1?.P1 === undefined || state.bids.r1?.P2 === undefined) {
+  if (!state.bids.r1 || state.bids.r1.P1 < state.config.bidMin || state.bids.r1.P2 < state.config.bidMin) {
     return;
   }
   const p1 = state.bids.r1.P1;
@@ -226,7 +226,7 @@ function resolveTurnBidding(state: GameState, events: EngineEvent[]): void {
 }
 
 function resolveTurnBiddingRound2(state: GameState, events: EngineEvent[]): void {
-  if (state.bids.r2?.P1 === undefined || state.bids.r2?.P2 === undefined) {
+  if (!state.bids.r2 || state.bids.r2.P1 < state.config.bidMin || state.bids.r2.P2 < state.config.bidMin) {
     return;
   }
 
@@ -538,7 +538,7 @@ function applyActionInternal(state: GameState, action: Action): { next: GameStat
       }
       next.bids.r1 = next.bids.r1 ?? { P1: -1, P2: -1 };
       next.bids.r1[action.player] = action.value;
-      if (next.bids.r1.P1 >= 0 && next.bids.r1.P2 >= 0) {
+      if (next.bids.r1.P1 >= next.config.bidMin && next.bids.r1.P2 >= next.config.bidMin) {
         resolveTurnBidding(next, events);
       }
       return { next, events };
@@ -549,7 +549,7 @@ function applyActionInternal(state: GameState, action: Action): { next: GameStat
     }
     next.bids.r2 = next.bids.r2 ?? { P1: -1, P2: -1 };
     next.bids.r2[action.player] = action.value;
-    if (next.bids.r2.P1 >= 0 && next.bids.r2.P2 >= 0) {
+    if (next.bids.r2.P1 >= next.config.bidMin && next.bids.r2.P2 >= next.config.bidMin) {
       resolveTurnBiddingRound2(next, events);
     }
     return { next, events };
