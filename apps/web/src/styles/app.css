@@ -1,0 +1,175 @@
+:root {
+  --bg: #f3efe3;
+  --panel: #fffaf0;
+  --line: #58432f;
+  --accent: #1f5f5b;
+  --danger: #a33b2f;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: radial-gradient(circle at top, #fffef5, var(--bg));
+  color: #2a1f14;
+}
+
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.page.narrow {
+  max-width: 760px;
+}
+
+.home-actions,
+.inline-actions,
+.room-links {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.button-link,
+button {
+  border: 1px solid var(--line);
+  background: #fff;
+  color: #2a1f14;
+  border-radius: 8px;
+  padding: 8px 14px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.button-link.disabled,
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+textarea,
+input[type="number"] {
+  width: 100%;
+  margin: 8px 0 12px;
+  border: 1px solid #98846e;
+  border-radius: 8px;
+  padding: 8px;
+  background: #fffef8;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid #cab9a2;
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.phase-panel {
+  margin-bottom: 12px;
+}
+
+.room-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.room-content {
+  display: grid;
+  grid-template-columns: minmax(360px, 1fr) 320px;
+  gap: 16px;
+}
+
+.left-column {
+  min-width: 0;
+}
+
+.board-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.board-grid {
+  display: grid;
+  gap: 2px;
+  background: #815c3f;
+  border: 2px solid #4a321f;
+  padding: 4px;
+  border-radius: 8px;
+}
+
+.board-cell {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  border: 1px solid #9d7d59;
+  background: #e8c89a;
+  padding: 0;
+}
+
+.stone {
+  position: absolute;
+  inset: 12%;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 0.65rem;
+  font-weight: 600;
+}
+
+.stone.black {
+  background: #1f1f1f;
+  color: #f2f2f2;
+}
+
+.stone.white {
+  background: #f8f8f8;
+  color: #333;
+  border: 1px solid #999;
+}
+
+.point-mark {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.point-mark.plus {
+  color: #1f5f5b;
+}
+
+.point-mark.minus {
+  color: #a33b2f;
+}
+
+.hud {
+  display: grid;
+  gap: 10px;
+}
+
+.event-list {
+  margin: 0;
+  padding-left: 18px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.error {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+@media (max-width: 960px) {
+  .room-content {
+    grid-template-columns: 1fr;
+  }
+}
