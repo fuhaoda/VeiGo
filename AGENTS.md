@@ -3,7 +3,7 @@
 ## 1) 项目目标
 交付一个可部署到 GitHub Pages 的迷你围棋 Web App：
 - 完整规则首版上线（布局三手、争先手竞价、隐藏手、扫描、+/- 点、终局计分）
-- 支持异地双人对弈（WebRTC 交换码）
+- 支持异地双人对弈（10 位交换码）
 - 引擎 deterministic，可测试，可复用
 
 ## 2) 非目标
@@ -16,10 +16,10 @@
 - Engine: TypeScript strict
 - Web: React + Vite
 - Tests: Vitest
-- P2P: RTCPeerConnection + RTCDataChannel
+- P2P: PeerJS（公共信令）+ RTCDataChannel
 - NAT: 公开 STUN，不使用 TURN
 - Deploy: GitHub Actions -> GitHub Pages
-- 边界：严格 GitHub（不引入自建/托管后端）
+- 边界：不引入自建后端；允许使用第三方公共信令
 
 ## 4) 规则权威来源与默认假设
 规则来源以中文维基“迷你围棋”要点为基线，默认实现：
@@ -42,9 +42,9 @@
 - `packages/engine/src/go_core/*`
   - chain/liberty/territory/ko 算法
 - `packages/protocol/src/*`
-  - 交换码编码、wire message 解析、序列校验
+  - wire message 解析、序列校验
 - `apps/web/src/pages/*`
-  - `/`, `/create`, `/join`, `/room/:roomId`
+  - `/`, `/create`, `/join`, `/room/:roomId`（10位交换码）
 - `apps/web/src/state/useGameController.ts`
   - 本地引擎状态、P2P 消息同步、错误处理
 
@@ -73,7 +73,7 @@
 
 ## 9) 版本路线图
 - v1: 交换码联机 + 完整规则 + Pages 上线
-- v1.1: 自动匹配可行性评估（在不破坏 GitHub 边界前提下）
+- v1.1: 自动匹配可行性评估（在不破坏轻量部署前提下）
 - v1.2: 观战/棋谱/断线恢复增强（按需求）
 
 ## 10) 执行原则

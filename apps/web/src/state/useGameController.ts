@@ -39,7 +39,7 @@ export function useGameController(session: ActiveSession | null) {
   }, [session]);
 
   const sendWire = (message: WireMessage) => {
-    if (!session || session.channel.readyState !== "open") {
+    if (!session || !session.channel.open) {
       return;
     }
     session.channel.send(serializeWireMessage(message));
@@ -108,10 +108,11 @@ export function useGameController(session: ActiveSession | null) {
       forceEnd("DISCONNECT");
     };
 
-    const onMessage = (event: MessageEvent<string>) => {
+    const onMessageRaw = (raw: unknown) => {
+      const payload = typeof raw === "string" ? raw : JSON.stringify(raw);
       let msg: WireMessage;
       try {
-        msg = parseWireMessage(event.data);
+        msg = parseWireMessage(payload);
       } catch (err) {
         setError(err instanceof Error ? err.message : "消息解析失败");
         return;
@@ -166,18 +167,24 @@ export function useGameController(session: ActiveSession | null) {
       }
     };
 
-    channel.addEventListener("open", onOpen);
-    channel.addEventListener("close", onClose);
-    channel.addEventListener("message", onMessage as EventListener);
+    const onError = (err: unknown) => {
+      setError(err instanceof Error ? err.message : "连接错误");
+    };
 
-    if (channel.readyState === "open") {
+    channel.on("open", onOpen);
+    channel.on("close", onClose);
+    channel.on("data", onMessageRaw);
+    channel.on("error", onError);
+
+    if (channel.open) {
       onOpen();
     }
 
     return () => {
-      channel.removeEventListener("open", onOpen);
-      channel.removeEventListener("close", onClose);
-      channel.removeEventListener("message", onMessage as EventListener);
+      channel.off?.("open", onOpen);
+      channel.off?.("close", onClose);
+      channel.off?.("data", onMessageRaw);
+      channel.off?.("error", onError);
     };
   }, [session]);
 

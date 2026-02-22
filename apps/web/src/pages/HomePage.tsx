@@ -4,7 +4,7 @@ export function HomePage() {
   return (
     <main className="page">
       <h1>MiniWeiqi</h1>
-      <p>迷你围棋（11x11）P2P 对弈首版：交换码联机。</p>
+      <p>迷你围棋（11x11）P2P 对弈首版：10 位交换码联机。</p>
       <div className="home-actions">
         <Link className="button-link" to="/create">
           创建对局

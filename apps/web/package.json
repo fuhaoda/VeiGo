@@ -11,6 +11,7 @@
   "dependencies": {
     "@miniweiqi/engine": "0.1.0",
     "@miniweiqi/protocol": "0.1.0",
+    "peerjs": "^1.5.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.30.1"

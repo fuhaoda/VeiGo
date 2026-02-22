@@ -1,86 +1,85 @@
 import { useState } from "react";
+import Peer from "peerjs";
 import { Link, useNavigate } from "react-router-dom";
-import { decodeOfferCode, encodeAnswerCode } from "../net/handshake";
-import { createPeerConnection, randomRoomId, waitIceGatheringComplete } from "../net/webrtc";
-import { setSession } from "../net/sessionStore";
+import { buildSessionCloser, isValidExchangeCode, normalizeExchangeCode } from "../net/peer";
+import { clearSession, setSession } from "../net/sessionStore";
 
 export function JoinPage() {
-  const [offerInput, setOfferInput] = useState("");
-  const [answerCode, setAnswerCode] = useState("");
+  const [exchangeCode, setExchangeCode] = useState("");
+  const [status, setStatus] = useState("未连接");
   const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
-  const [roomId, setRoomId] = useState<string>("");
   const [working, setWorking] = useState(false);
   const navigate = useNavigate();
 
-  const handleGenerateAnswer = async () => {
-    setWorking(true);
-    setError(null);
-    try {
-      const payload = decodeOfferCode(offerInput);
-      const pc = createPeerConnection();
-
-      const waitChannel = new Promise<RTCDataChannel>((resolve) => {
-        pc.ondatachannel = (event) => resolve(event.channel);
-      });
-
-      await pc.setRemoteDescription(payload.sdp);
-      const answer = await pc.createAnswer();
-      await pc.setLocalDescription(answer);
-      await waitIceGatheringComplete(pc);
-
-      const local = pc.localDescription;
-      if (!local) {
-        throw new Error("生成 Answer 失败");
-      }
-
-      const encoded = encodeAnswerCode({
-        v: 1,
-        kind: "answer",
-        sdp: {
-          type: local.type,
-          sdp: local.sdp ?? ""
-        }
-      });
-
-      const channel = await waitChannel;
-      const nextRoomId = randomRoomId();
-      channel.onopen = () => {
-        navigate(`/room/${nextRoomId}`);
-      };
-
-      setSession({ roomId: nextRoomId, role: "GUEST", pc, channel });
-      setRoomId(nextRoomId);
-      setAnswerCode(encoded);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "生成 Answer 失败");
-    } finally {
-      setWorking(false);
-    }
-  };
-
-  const copyAnswer = async () => {
-    if (!answerCode) {
+  const handleJoin = () => {
+    const code = normalizeExchangeCode(exchangeCode);
+    if (!isValidExchangeCode(code)) {
+      setError("交换码必须是 10 位（A-Z, 2-9）");
       return;
     }
-    await navigator.clipboard.writeText(answerCode);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+
+    clearSession();
+    setWorking(true);
+    setError(null);
+    setStatus("正在连接房间...");
+
+    const peer = new Peer();
+
+    peer.on("open", () => {
+      const conn = peer.connect(code, { reliable: true });
+
+      conn.on("open", () => {
+        setSession({
+          roomId: code,
+          role: "GUEST",
+          peer,
+          channel: conn,
+          close: buildSessionCloser(peer, conn)
+        });
+        navigate(`/room/${code}`);
+      });
+
+      conn.on("error", (connErr) => {
+        setWorking(false);
+        setStatus("连接失败");
+        setError(connErr?.message ?? "连接对手失败");
+        try {
+          peer.destroy();
+        } catch {
+          // no-op
+        }
+      });
+    });
+
+    peer.on("error", (err: unknown) => {
+      const maybeErr = err as { message?: string };
+      setWorking(false);
+      setStatus("连接失败");
+      setError(maybeErr.message ?? "连接失败");
+      try {
+        peer.destroy();
+      } catch {
+        // no-op
+      }
+    });
   };
 
   return (
     <main className="page narrow">
       <h1>加入对局</h1>
-      <p>粘贴对方给你的 Offer 交换码，生成 Answer 返还给对方。</p>
-      <textarea value={offerInput} onChange={(e) => setOfferInput(e.target.value)} rows={8} placeholder="粘贴 Offer 交换码" />
-      <button type="button" onClick={handleGenerateAnswer} disabled={working || !offerInput.trim()}>
-        {working ? "处理中..." : "生成 Answer 交换码"}
+      <p>输入对方给你的 10 位交换码。</p>
+      <input
+        value={exchangeCode}
+        onChange={(e) => setExchangeCode(e.target.value.toUpperCase())}
+        placeholder="例如 ABCD23EFGH"
+        maxLength={10}
+      />
+
+      <button type="button" onClick={handleJoin} disabled={working}>
+        {working ? "连接中..." : "加入对局"}
       </button>
-      {roomId ? <p>房间号：{roomId}</p> : null}
-      <textarea value={answerCode} readOnly rows={8} placeholder="Answer 交换码" />
-      <button type="button" onClick={copyAnswer} disabled={!answerCode}>
-        {copied ? "已复制 Answer" : "复制 Answer 交换码"}
-      </button>
+
+      <p>状态：{status}</p>
       {error ? <p className="error">{error}</p> : null}
       <Link to="/">返回首页</Link>
     </main>

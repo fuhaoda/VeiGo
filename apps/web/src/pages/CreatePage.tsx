@@ -1,100 +1,96 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
+import Peer from "peerjs";
 import { Link, useNavigate } from "react-router-dom";
-import { decodeAnswerCode, encodeOfferCode } from "../net/handshake";
-import { createPeerConnection, randomRoomId, waitIceGatheringComplete } from "../net/webrtc";
-import { getSession, setSession } from "../net/sessionStore";
+import { buildSessionCloser, generateExchangeCode } from "../net/peer";
+import { clearSession, setSession } from "../net/sessionStore";
 
 export function CreatePage() {
-  const [offerCode, setOfferCode] = useState("");
-  const [answerInput, setAnswerInput] = useState("");
+  const [exchangeCode, setExchangeCode] = useState("");
+  const [status, setStatus] = useState("未创建房间");
   const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState<"offer" | null>(null);
-  const [roomId, setRoomId] = useState<string>("");
+  const [copied, setCopied] = useState(false);
   const [working, setWorking] = useState(false);
   const navigate = useNavigate();
 
-  const canApplyAnswer = useMemo(() => offerCode.length > 0 && answerInput.trim().length > 0, [offerCode, answerInput]);
+  const createHost = (attempt = 0) => {
+    const code = generateExchangeCode(10);
+    const peer = new Peer(code);
 
-  const handleGenerateOffer = async () => {
-    setWorking(true);
-    setError(null);
-    try {
-      const nextRoomId = randomRoomId();
-      const pc = createPeerConnection();
-      const channel = pc.createDataChannel("miniweiqi");
-
-      channel.onopen = () => {
-        navigate(`/room/${nextRoomId}`);
-      };
-
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-      await waitIceGatheringComplete(pc);
-
-      if (!pc.localDescription) {
-        throw new Error("创建 offer 失败");
-      }
-
-      const payload = {
-        v: 1 as const,
-        kind: "offer" as const,
-        sdp: {
-          type: pc.localDescription.type,
-          sdp: pc.localDescription.sdp ?? ""
-        }
-      };
-
-      setOfferCode(encodeOfferCode(payload));
-      setRoomId(nextRoomId);
-      setSession({ roomId: nextRoomId, role: "HOST", pc, channel });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "生成 Offer 失败");
-    } finally {
+    peer.on("open", () => {
+      setExchangeCode(code);
+      setStatus("房间已创建，等待对手输入交换码加入...");
       setWorking(false);
-    }
-  };
+    });
 
-  const handleApplyAnswer = async () => {
-    setError(null);
-    try {
-      const candidate = decodeAnswerCode(answerInput.trim());
-      const session = getSession();
-      if (!session) {
-        throw new Error("会话不存在，请重新生成 Offer");
+    peer.on("error", (err: unknown) => {
+      const maybeErr = err as { type?: string; message?: string };
+      if (maybeErr.type === "unavailable-id" && attempt < 5) {
+        try {
+          peer.destroy();
+        } catch {
+          // no-op
+        }
+        createHost(attempt + 1);
+        return;
       }
 
-      await session.pc.setRemoteDescription(candidate.sdp);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "应用 Answer 失败");
-    }
+      setWorking(false);
+      setError(maybeErr.message ?? "创建房间失败");
+    });
+
+    peer.on("connection", (conn) => {
+      setStatus("检测到对手，正在建立连接...");
+
+      conn.on("open", () => {
+        setSession({
+          roomId: code,
+          role: "HOST",
+          peer,
+          channel: conn,
+          close: buildSessionCloser(peer, conn)
+        });
+        navigate(`/room/${code}`);
+      });
+
+      conn.on("error", (connErr) => {
+        setError(connErr?.message ?? "连接对手失败");
+      });
+    });
   };
 
-  const copyOffer = async () => {
-    if (!offerCode) {
+  const handleCreate = () => {
+    clearSession();
+    setError(null);
+    setCopied(false);
+    setWorking(true);
+    setExchangeCode("");
+    setStatus("正在创建 10 位交换码...");
+    createHost();
+  };
+
+  const copyCode = async () => {
+    if (!exchangeCode) {
       return;
     }
-    await navigator.clipboard.writeText(offerCode);
-    setCopied("offer");
-    setTimeout(() => setCopied(null), 1500);
+    await navigator.clipboard.writeText(exchangeCode);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1200);
   };
 
   return (
     <main className="page narrow">
       <h1>创建对局</h1>
-      <p>步骤 1：生成 Offer 交换码，发给对方。</p>
-      <button type="button" onClick={handleGenerateOffer} disabled={working}>
-        {working ? "生成中..." : "生成 Offer 交换码"}
-      </button>
-      {roomId ? <p>房间号：{roomId}</p> : null}
-      <textarea value={offerCode} readOnly rows={8} placeholder="Offer 交换码" />
-      <button type="button" onClick={copyOffer} disabled={!offerCode}>
-        {copied === "offer" ? "已复制 Offer" : "复制 Offer 交换码"}
+      <p>创建后会生成一个 10 位交换码，把它发给对手即可。</p>
+
+      <button type="button" onClick={handleCreate} disabled={working}>
+        {working ? "创建中..." : "创建 10 位交换码"}
       </button>
 
-      <p>步骤 2：对方回传 Answer 交换码后粘贴到下方。</p>
-      <textarea value={answerInput} onChange={(e) => setAnswerInput(e.target.value)} rows={8} placeholder="粘贴 Answer 交换码" />
-      <button type="button" onClick={handleApplyAnswer} disabled={!canApplyAnswer}>
-        应用 Answer 并建立连接
+      <p>状态：{status}</p>
+      <input readOnly value={exchangeCode} placeholder="10 位交换码" />
+
+      <button type="button" onClick={copyCode} disabled={!exchangeCode}>
+        {copied ? "已复制" : "复制交换码"}
       </button>
 
       {error ? <p className="error">{error}</p> : null}

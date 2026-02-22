@@ -1,10 +1,12 @@
+import type { DataConnection, Peer } from "peerjs";
 import type { PeerRole } from "@miniweiqi/protocol";
 
 export interface ActiveSession {
   roomId: string;
   role: PeerRole;
-  pc: RTCPeerConnection;
-  channel: RTCDataChannel;
+  peer: Peer;
+  channel: DataConnection;
+  close: () => void;
 }
 
 let currentSession: ActiveSession | null = null;
@@ -21,15 +23,6 @@ export function clearSession(): void {
   if (!currentSession) {
     return;
   }
-  try {
-    currentSession.channel.close();
-  } catch {
-    // no-op
-  }
-  try {
-    currentSession.pc.close();
-  } catch {
-    // no-op
-  }
+  currentSession.close();
   currentSession = null;
 }
