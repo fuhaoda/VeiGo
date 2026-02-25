@@ -291,6 +291,12 @@ input[type="text"] {
   overflow-y: auto;
 }
 
+.score-note {
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: #5f503e;
+}
+
 .error {
   color: var(--danger);
   font-weight: 600;

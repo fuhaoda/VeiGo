@@ -36,6 +36,18 @@ export function HUD({ state, score, byoyomi, events, localPlayer, remoteStatus }
   const winnerLabel = state.winner ? labelByPlayer(state, state.winner) : "平局";
   const blackClock = byoyomi.players[blackPlayer];
   const whiteClock = byoyomi.players[whitePlayer];
+  const realtimeScore = {
+    [blackPlayer]:
+      score.aliveStones[blackPlayer] +
+      score.baseBonus[blackPlayer] +
+      score.plusMinusAndScan[blackPlayer] +
+      score.komi[blackPlayer],
+    [whitePlayer]:
+      score.aliveStones[whitePlayer] +
+      score.baseBonus[whitePlayer] +
+      score.plusMinusAndScan[whitePlayer] +
+      score.komi[whitePlayer]
+  } as const;
 
   return (
     <aside className="hud">
@@ -48,10 +60,23 @@ export function HUD({ state, score, byoyomi, events, localPlayer, remoteStatus }
       </section>
 
       <section className="panel">
-        <h3>即时分数</h3>
-        <p>黑棋：{score.total[blackPlayer]}</p>
-        <p>白棋：{score.total[whitePlayer]}</p>
-        {state.phase === "ENDED" ? <p>胜者：{winnerLabel}</p> : null}
+        <h3>盘面即时分</h3>
+        <p>黑棋：{realtimeScore[blackPlayer]}</p>
+        <p>白棋：{realtimeScore[whitePlayer]}</p>
+        <p className="score-note">口径：不算围空（按视频“占领点数”口径）</p>
+      </section>
+
+      <section className="panel">
+        <h3>终局分</h3>
+        {state.phase === "ENDED" ? (
+          <>
+            <p>黑棋：{score.total[blackPlayer]}</p>
+            <p>白棋：{score.total[whitePlayer]}</p>
+            <p>胜者：{winnerLabel}</p>
+          </>
+        ) : (
+          <p>对局结束后显示（含围空）。</p>
+        )}
       </section>
 
       <section className="panel">
