@@ -1,12 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { applyAction, computeBoardHash, createInitialState, type GameState } from "../src";
 
-function withStone(state: GameState, id: string, owner: "P1" | "P2", x: number, y: number): void {
+function withStone(
+  state: GameState,
+  id: string,
+  owner: "P1" | "P2",
+  x: number,
+  y: number,
+  kind: "NORMAL" | "BASE" = "NORMAL"
+): void {
   state.stones[id] = {
     id,
     owner,
     color: state.playerColor[owner],
-    kind: "NORMAL",
+    kind,
     coord: { x, y },
     visibleTo: { P1: true, P2: true }
   };
@@ -52,5 +59,22 @@ describe("capture and ko", () => {
     expect(() =>
       applyAction(state, { type: "PlaceStone", player: "P2", coord: { x: 1, y: 1 }, kind: "NORMAL" })
     ).toThrow(/ko/i);
+  });
+
+  it("awards +5 when capturing each base stone", () => {
+    let state = createInitialState({ boardSize: 5, map: { size: 5, plusPoints: [], minusPoints: [] } });
+    state.phase = "MAIN_PLAY";
+    state.nextToAct = "P1";
+
+    withStone(state, "W_BASE", "P2", 1, 1, "BASE");
+    withStone(state, "B1", "P1", 1, 0);
+    withStone(state, "B2", "P1", 0, 1);
+    withStone(state, "B3", "P1", 2, 1);
+    state.historyBoardHashes = [computeBoardHash(state), computeBoardHash(state)];
+
+    const result = applyAction(state, { type: "PlaceStone", player: "P1", coord: { x: 1, y: 2 }, kind: "NORMAL" });
+    const baseCapture = result.events.find((ev) => ev.type === "SCORE_DELTA" && ev.reason === "BASE_CAPTURE");
+    expect(baseCapture?.amount).toBe(5);
+    expect(result.nextState.scoreEvents.at(-1)?.amount).toBe(5);
   });
 });

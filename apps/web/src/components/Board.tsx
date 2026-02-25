@@ -5,6 +5,8 @@ interface BoardProps {
   state: GameState;
   localPlayer: PlayerId;
   basePreviewCoords?: Coord[];
+  movePreviewCoords?: Coord[];
+  movePreviewKind?: "NORMAL" | "HIDDEN";
   onCellClick: (coord: Coord) => void;
 }
 
@@ -21,13 +23,22 @@ function getStarPointKeys(size: number): Set<string> {
   return new Set(points.map(coordKey));
 }
 
-export function Board({ state, localPlayer, basePreviewCoords = [], onCellClick }: BoardProps) {
+export function Board({
+  state,
+  localPlayer,
+  basePreviewCoords = [],
+  movePreviewCoords = [],
+  movePreviewKind = "NORMAL",
+  onCellClick
+}: BoardProps) {
   const plus = new Set(state.config.map.plusPoints.map(coordKey));
   const minus = new Set([...state.config.map.minusPoints.map(coordKey), ...state.dynamicMinusPoints]);
   const triggered = new Set(state.triggeredPointMarkers);
   const starPoints = getStarPointKeys(state.config.boardSize);
-  const previewKeys = new Set(basePreviewCoords.map(coordKey));
+  const basePreviewKeys = new Set(basePreviewCoords.map(coordKey));
+  const movePreviewKeys = new Set(movePreviewCoords.map(coordKey));
   const previewColor = state.playerColor[localPlayer];
+  const lastMoveKey = state.lastMoveCoord ? coordKey(state.lastMoveCoord) : null;
 
   return (
     <div className="board-wrap">
@@ -42,15 +53,27 @@ export function Board({ state, localPlayer, basePreviewCoords = [], onCellClick 
           const isStar = starPoints.has(key);
 
           let stoneClass = "";
+          let showLastMove = false;
 
           if (id) {
             const stone = state.stones[id];
             const visible = stone.visibleTo[localPlayer];
             if (visible) {
-              stoneClass = stone.color === "B" ? "stone black" : "stone white";
+              const classes = ["stone", stone.color === "B" ? "black" : "white"];
+              if (stone.kind === "BASE") {
+                classes.push("base");
+              }
+              stoneClass = classes.join(" ");
+              showLastMove = lastMoveKey === key;
             }
-          } else if (previewKeys.has(key)) {
-            stoneClass = previewColor === "B" ? "stone black preview" : "stone white preview";
+          } else if (basePreviewKeys.has(key)) {
+            stoneClass = previewColor === "B" ? "stone black preview base" : "stone white preview base";
+          } else if (movePreviewKeys.has(key)) {
+            const colorClass = previewColor === "B" ? "stone black preview" : "stone white preview";
+            stoneClass =
+              movePreviewKind === "HIDDEN"
+                ? `${colorClass} hidden-preview`
+                : colorClass;
           }
 
           const cellClass = [
@@ -69,7 +92,11 @@ export function Board({ state, localPlayer, basePreviewCoords = [], onCellClick 
               <span className="line line-v" />
               {isStar ? <span className="star-point" /> : null}
               {showMark ? <span className={`point-mark ${mark === "+" ? "plus" : "minus"}`}>{mark}</span> : null}
-              {stoneClass ? <span className={stoneClass} /> : null}
+              {stoneClass ? (
+                <span className={stoneClass}>
+                  {showLastMove ? <span className="last-move-marker" /> : null}
+                </span>
+              ) : null}
             </button>
           );
         })}

@@ -1,10 +1,13 @@
-import type { GameState, PlayerId } from "@miniweiqi/engine";
+import type { Coord, GameState, PlayerId } from "@miniweiqi/engine";
 
 interface MainPlayPanelProps {
   state: GameState;
   localPlayer: PlayerId;
   moveKind: "NORMAL" | "HIDDEN";
   setMoveKind: (kind: "NORMAL" | "HIDDEN") => void;
+  pendingHiddenCoord: Coord | null;
+  onConfirmHidden: () => void;
+  onCancelHidden: () => void;
   scanMode: boolean;
   setScanMode: (v: boolean) => void;
   onPass: () => void;
@@ -16,6 +19,9 @@ export function MainPlayPanel({
   localPlayer,
   moveKind,
   setMoveKind,
+  pendingHiddenCoord,
+  onConfirmHidden,
+  onCancelHidden,
   scanMode,
   setScanMode,
   onPass,
@@ -46,6 +52,20 @@ export function MainPlayPanel({
           查找（-2）
         </button>
       </div>
+
+      {moveKind === "HIDDEN" ? (
+        <div className="hidden-confirm">
+          <p>隐藏子坐标：{pendingHiddenCoord ? `(${pendingHiddenCoord.x}, ${pendingHiddenCoord.y})` : "未选择"}</p>
+          <div className="inline-actions">
+            <button type="button" onClick={onConfirmHidden} disabled={!isMyTurn || !pendingHiddenCoord}>
+              提交隐藏子
+            </button>
+            <button type="button" onClick={onCancelHidden} disabled={!pendingHiddenCoord}>
+              取消选择
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       <div className="inline-actions">
         <button type="button" onClick={onPass} disabled={!isMyTurn}>

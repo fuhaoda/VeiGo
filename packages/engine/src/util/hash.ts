@@ -55,6 +55,8 @@ export function computeStateHash(state: GameState): string {
     consecutivePasses: state.consecutivePasses,
     scoreEvents: state.scoreEvents,
     moveIndex: state.moveIndex,
+    lastMoveCoord: state.lastMoveCoord ?? null,
+    lastMovePlayer: state.lastMovePlayer ?? null,
     historyBoardHashes: state.historyBoardHashes,
     rngSeed: state.rngSeed,
     winner: state.winner,

@@ -84,6 +84,8 @@ export interface GameState {
   consecutivePasses: number;
   scoreEvents: ScoreEvent[];
   moveIndex: number;
+  lastMoveCoord?: Coord;
+  lastMovePlayer?: PlayerId;
   historyBoardHashes: string[];
   rngSeed: number;
   winner?: PlayerId;

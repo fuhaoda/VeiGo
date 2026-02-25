@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import type { Coord } from "@miniweiqi/engine";
 import { BaseBuildPanel } from "../components/PhasePanels/BaseBuildPanel";
@@ -16,10 +16,25 @@ export function RoomPage() {
 
   const [bidValue, setBidValue] = useState(10);
   const [moveKind, setMoveKind] = useState<"NORMAL" | "HIDDEN">("NORMAL");
+  const [pendingHiddenCoord, setPendingHiddenCoord] = useState<Coord | null>(null);
   const [scanMode, setScanMode] = useState(false);
   const isBaseConfirmed = state.baseBuildConfirmed[localPlayer];
   const basePreviewCoords =
     state.phase === "BASE_BUILD" && !isBaseConfirmed ? state.baseBuildSelections[localPlayer] : [];
+  const movePreviewCoords =
+    state.phase === "MAIN_PLAY" && moveKind === "HIDDEN" && pendingHiddenCoord ? [pendingHiddenCoord] : [];
+
+  useEffect(() => {
+    if (state.phase !== "MAIN_PLAY" || moveKind !== "HIDDEN") {
+      setPendingHiddenCoord(null);
+    }
+  }, [state.phase, moveKind]);
+
+  useEffect(() => {
+    if (state.nextToAct !== localPlayer) {
+      setPendingHiddenCoord(null);
+    }
+  }, [state.nextToAct, localPlayer]);
 
   if (!session) {
     return (
@@ -44,16 +59,34 @@ export function RoomPage() {
       return;
     }
 
+    if (state.nextToAct !== localPlayer) {
+      return;
+    }
+
     if (scanMode) {
       dispatchLocalAction({ type: "Scan", player: localPlayer, coord });
       setScanMode(false);
       return;
     }
 
-    dispatchLocalAction({ type: "PlaceStone", player: localPlayer, coord, kind: moveKind });
     if (moveKind === "HIDDEN") {
-      setMoveKind("NORMAL");
+      if (state.nextToAct !== localPlayer) {
+        return;
+      }
+      setPendingHiddenCoord(coord);
+      return;
     }
+
+    dispatchLocalAction({ type: "PlaceStone", player: localPlayer, coord, kind: moveKind });
+  };
+
+  const submitHiddenStone = () => {
+    if (!pendingHiddenCoord) {
+      return;
+    }
+    dispatchLocalAction({ type: "PlaceStone", player: localPlayer, coord: pendingHiddenCoord, kind: "HIDDEN" });
+    setPendingHiddenCoord(null);
+    setMoveKind("NORMAL");
   };
 
   const renderPhasePanel = () => {
@@ -89,6 +122,9 @@ export function RoomPage() {
           localPlayer={localPlayer}
           moveKind={moveKind}
           setMoveKind={setMoveKind}
+          pendingHiddenCoord={pendingHiddenCoord}
+          onConfirmHidden={submitHiddenStone}
+          onCancelHidden={() => setPendingHiddenCoord(null)}
           scanMode={scanMode}
           setScanMode={setScanMode}
           onPass={() => dispatchLocalAction({ type: "Pass", player: localPlayer })}
@@ -128,7 +164,14 @@ export function RoomPage() {
       <section className="room-content">
         <div className="left-column">
           {renderPhasePanel()}
-          <Board state={state} localPlayer={localPlayer} basePreviewCoords={basePreviewCoords} onCellClick={onBoardClick} />
+          <Board
+            state={state}
+            localPlayer={localPlayer}
+            basePreviewCoords={basePreviewCoords}
+            movePreviewCoords={movePreviewCoords}
+            movePreviewKind={moveKind}
+            onCellClick={onBoardClick}
+          />
         </div>
         <HUD state={state} score={score} events={events} localPlayer={localPlayer} remoteStatus={remoteStatus} />
       </section>

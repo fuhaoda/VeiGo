@@ -27,15 +27,16 @@ export const DEFAULT_CONFIG: GameConfig = {
   map: {
     size: 11,
     plusPoints: [
-      { x: 3, y: 3 },
-      { x: 7, y: 7 },
-      { x: 3, y: 7 },
-      { x: 7, y: 3 }
+      { x: 0, y: 5 },
+      { x: 5, y: 0 },
+      { x: 10, y: 5 },
+      { x: 5, y: 10 }
     ],
     minusPoints: [
-      { x: 5, y: 5 },
-      { x: 1, y: 9 },
-      { x: 9, y: 1 }
+      { x: 2, y: 2 },
+      { x: 2, y: 8 },
+      { x: 8, y: 2 },
+      { x: 8, y: 8 }
     ]
   },
   koRule: "simple",
@@ -82,6 +83,8 @@ export function createInitialState(overrides?: Partial<GameConfig>): GameState {
     consecutivePasses: 0,
     scoreEvents: [],
     moveIndex: 0,
+    lastMoveCoord: undefined,
+    lastMovePlayer: undefined,
     historyBoardHashes: [],
     rngSeed: config.seed
   };
@@ -322,6 +325,14 @@ function resolveCaptures(state: GameState, events: EngineEvent[], player: Player
     return 0;
   }
 
+  let capturedBaseCount = 0;
+  for (const id of capturedStoneIds) {
+    const stone = state.stones[id];
+    if (stone?.kind === "BASE") {
+      capturedBaseCount += 1;
+    }
+  }
+
   const hiddenToReveal: string[] = [];
   for (const id of capturedStoneIds) {
     const stone = state.stones[id];
@@ -362,6 +373,17 @@ function resolveCaptures(state: GameState, events: EngineEvent[], player: Player
         });
       }
     }
+  }
+
+  if (capturedBaseCount > 0) {
+    pushScoreEvent(
+      state,
+      events,
+      player,
+      capturedBaseCount * (state.config.baseStoneBonus + 1),
+      "BASE_CAPTURE",
+      placed.coord
+    );
   }
 
   const coords = removeStones(state, [...capturedStoneIds]);
@@ -441,7 +463,7 @@ function placeMainStone(next: GameState, action: Extract<Action, { type: "PlaceS
     coord: action.coord,
     visibleTo:
       action.kind === "HIDDEN"
-        ? { [action.player]: true, [otherPlayer(action.player)]: false }
+        ? { P1: false, P2: false }
         : { P1: true, P2: true }
   };
 
@@ -465,6 +487,8 @@ function placeMainStone(next: GameState, action: Extract<Action, { type: "PlaceS
 
   next.consecutivePasses = 0;
   next.moveIndex += 1;
+  next.lastMoveCoord = action.coord;
+  next.lastMovePlayer = action.player;
   next.nextToAct = otherPlayer(action.player);
   appendBoardHistory(next);
 }
@@ -509,6 +533,8 @@ function applyActionInternal(state: GameState, action: Action): { next: GameStat
       throw new RuleError("Base stone limit reached");
     }
     next.baseBuildSelections[action.player].push(action.coord);
+    next.lastMoveCoord = action.coord;
+    next.lastMovePlayer = action.player;
     return { next, events };
   }
 
@@ -588,6 +614,9 @@ function applyActionInternal(state: GameState, action: Action): { next: GameStat
         }
       }
     }
+
+    next.lastMoveCoord = action.coord;
+    next.lastMovePlayer = action.player;
 
     return { next, events };
   }
