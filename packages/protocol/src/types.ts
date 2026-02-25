@@ -4,6 +4,7 @@ export type PeerRole = "HOST" | "GUEST";
 
 export type WireMessage =
   | { t: "HELLO"; protocolVersion: 1; roomId: string; peerRole: PeerRole }
+  | { t: "CLOCK_CONFIG"; enabled: boolean }
   | { t: "ACTION"; seq: number; action: Action; prevStateHash: string }
   | { t: "ACK"; seq: number; stateHash: string }
   | {
@@ -13,7 +14,7 @@ export type WireMessage =
       stateHash: string;
       reason: "RESYNC" | "RECONNECT_ATTEMPT";
     }
-  | { t: "END"; reason: "RESIGN" | "DOUBLE_PASS" | "DISCONNECT" };
+  | { t: "END"; reason: "RESIGN" | "DOUBLE_PASS" | "DISCONNECT" | "TIMEOUT"; loser?: "P1" | "P2" };
 
 export type OfferCodePayload = { v: 1; kind: "offer"; sdp: RTCSessionDescriptionInit };
 export type AnswerCodePayload = { v: 1; kind: "answer"; sdp: RTCSessionDescriptionInit };

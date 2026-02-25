@@ -12,6 +12,10 @@ function hasNumber(value: Record<string, unknown>, key: string): boolean {
   return typeof value[key] === "number";
 }
 
+function hasBoolean(value: Record<string, unknown>, key: string): boolean {
+  return typeof value[key] === "boolean";
+}
+
 export function serializeWireMessage(message: WireMessage): string {
   return JSON.stringify(message);
 }
@@ -38,6 +42,11 @@ export function parseWireMessage(raw: string): WireMessage {
     case "ACTION":
       if (!hasNumber(msg, "seq") || !hasString(msg, "prevStateHash") || !isObject(msg.action)) {
         throw new Error("Invalid ACTION message");
+      }
+      break;
+    case "CLOCK_CONFIG":
+      if (!hasBoolean(msg, "enabled")) {
+        throw new Error("Invalid CLOCK_CONFIG message");
       }
       break;
     case "ACK":

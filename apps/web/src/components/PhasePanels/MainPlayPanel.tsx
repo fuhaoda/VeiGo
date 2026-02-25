@@ -3,6 +3,9 @@ import type { Coord, GameState, PlayerId } from "@miniweiqi/engine";
 interface MainPlayPanelProps {
   state: GameState;
   localPlayer: PlayerId;
+  byoyomiEnabled: boolean;
+  canToggleByoyomi: boolean;
+  onToggleByoyomi: (enabled: boolean) => void;
   moveKind: "NORMAL" | "HIDDEN";
   setMoveKind: (kind: "NORMAL" | "HIDDEN") => void;
   pendingHiddenCoord: Coord | null;
@@ -17,6 +20,9 @@ interface MainPlayPanelProps {
 export function MainPlayPanel({
   state,
   localPlayer,
+  byoyomiEnabled,
+  canToggleByoyomi,
+  onToggleByoyomi,
   moveKind,
   setMoveKind,
   pendingHiddenCoord,
@@ -35,6 +41,18 @@ export function MainPlayPanel({
     <section className="panel phase-panel">
       <h3>主对局</h3>
       <p>当前{isMyTurn ? "轮到你" : "等待对手"}</p>
+
+      <div className="inline-actions">
+        <label className="toggle-line">
+          <input
+            type="checkbox"
+            checked={byoyomiEnabled}
+            onChange={(e) => onToggleByoyomi(e.target.checked)}
+            disabled={!canToggleByoyomi}
+          />
+          <span>启用读秒（25秒 x 3次）</span>
+        </label>
+      </div>
 
       <div className="inline-actions">
         <button type="button" onClick={() => setMoveKind("NORMAL")} className={moveKind === "NORMAL" ? "active" : ""}>

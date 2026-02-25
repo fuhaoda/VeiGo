@@ -12,7 +12,18 @@ import { useGameController } from "../state/useGameController";
 export function RoomPage() {
   const { roomId } = useParams();
   const session = useMemo(() => getSession(), []);
-  const { state, score, byoyomi, events, error, remoteStatus, localPlayer, dispatchLocalAction } = useGameController(session);
+  const {
+    state,
+    score,
+    byoyomi,
+    byoyomiEnabled,
+    events,
+    error,
+    remoteStatus,
+    localPlayer,
+    setByoyomiEnabled,
+    dispatchLocalAction
+  } = useGameController(session);
 
   const [bidValue, setBidValue] = useState(10);
   const [moveKind, setMoveKind] = useState<"NORMAL" | "HIDDEN">("NORMAL");
@@ -23,6 +34,8 @@ export function RoomPage() {
     state.phase === "BASE_BUILD" && !isBaseConfirmed ? state.baseBuildSelections[localPlayer] : [];
   const movePreviewCoords =
     state.phase === "MAIN_PLAY" && moveKind === "HIDDEN" && pendingHiddenCoord ? [pendingHiddenCoord] : [];
+  const canToggleByoyomi =
+    session?.role === "HOST" && (state.phase !== "MAIN_PLAY" || state.moveIndex === 0) && state.phase !== "ENDED";
 
   useEffect(() => {
     if (state.phase !== "MAIN_PLAY" || moveKind !== "HIDDEN") {
@@ -120,6 +133,9 @@ export function RoomPage() {
         <MainPlayPanel
           state={state}
           localPlayer={localPlayer}
+          byoyomiEnabled={byoyomiEnabled}
+          canToggleByoyomi={canToggleByoyomi}
+          onToggleByoyomi={setByoyomiEnabled}
           moveKind={moveKind}
           setMoveKind={setMoveKind}
           pendingHiddenCoord={pendingHiddenCoord}
@@ -173,7 +189,15 @@ export function RoomPage() {
             onCellClick={onBoardClick}
           />
         </div>
-        <HUD state={state} score={score} byoyomi={byoyomi} events={events} localPlayer={localPlayer} remoteStatus={remoteStatus} />
+        <HUD
+          state={state}
+          score={score}
+          byoyomi={byoyomi}
+          byoyomiEnabled={byoyomiEnabled}
+          events={events}
+          localPlayer={localPlayer}
+          remoteStatus={remoteStatus}
+        />
       </section>
     </main>
   );

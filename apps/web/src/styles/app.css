@@ -86,6 +86,18 @@ input[type="text"] {
   margin: 0 0 8px;
 }
 
+.toggle-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+}
+
+.toggle-line input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+}
+
 .room-head {
   display: flex;
   justify-content: space-between;

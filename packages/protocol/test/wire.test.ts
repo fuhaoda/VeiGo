@@ -14,6 +14,12 @@ describe("wire protocol", () => {
     expect(parseWireMessage(raw)).toEqual(msg);
   });
 
+  it("supports clock config messages", () => {
+    const msg: WireMessage = { t: "CLOCK_CONFIG", enabled: false };
+    const raw = serializeWireMessage(msg);
+    expect(parseWireMessage(raw)).toEqual(msg);
+  });
+
   it("rejects invalid wire message", () => {
     expect(() => parseWireMessage('{"t":"ACK","seq":"bad"}')).toThrow();
   });

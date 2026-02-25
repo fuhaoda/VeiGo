@@ -89,7 +89,7 @@ export interface GameState {
   historyBoardHashes: string[];
   rngSeed: number;
   winner?: PlayerId;
-  endReason?: "DOUBLE_PASS" | "RESIGN" | "DISCONNECT";
+  endReason?: "DOUBLE_PASS" | "RESIGN" | "DISCONNECT" | "TIMEOUT";
   finalScore?: ScoreBreakdown;
 }
 
@@ -107,7 +107,7 @@ export type EngineEvent =
   | { type: "CAPTURE"; by: PlayerId; stoneIds: string[]; coords: Coord[] }
   | { type: "SCORE_DELTA"; player: PlayerId; amount: number; reason: string; coord?: Coord }
   | { type: "PHASE_CHANGE"; phase: Phase }
-  | { type: "END"; reason: "DOUBLE_PASS" | "RESIGN" | "DISCONNECT"; winner?: PlayerId };
+  | { type: "END"; reason: "DOUBLE_PASS" | "RESIGN" | "DISCONNECT" | "TIMEOUT"; winner?: PlayerId };
 
 export interface ApplyResult {
   nextState: GameState;

@@ -5,6 +5,7 @@ interface HUDProps {
   state: GameState;
   score: ScoreBreakdown;
   byoyomi: ByoyomiState;
+  byoyomiEnabled: boolean;
   events: EngineEvent[];
   localPlayer: PlayerId;
   remoteStatus: "idle" | "connected" | "closed";
@@ -23,12 +24,13 @@ function formatReason(reason: string): string {
     PLUS_POINT: "加点",
     MINUS_POINT: "减点",
     SCAN_COST: "查找",
-    BASE_CAPTURE: "提基地子"
+    BASE_CAPTURE: "提基地子",
+    TIMEOUT: "读秒超时"
   };
   return mapping[reason] ?? reason;
 }
 
-export function HUD({ state, score, byoyomi, events, localPlayer, remoteStatus }: HUDProps) {
+export function HUD({ state, score, byoyomi, byoyomiEnabled, events, localPlayer, remoteStatus }: HUDProps) {
   const blackPlayer = playerByColor(state, "B");
   const whitePlayer = playerByColor(state, "W");
   const localColorLabel = labelByPlayer(state, localPlayer);
@@ -81,14 +83,20 @@ export function HUD({ state, score, byoyomi, events, localPlayer, remoteStatus }
 
       <section className="panel">
         <h3>读秒</h3>
-        <p>
-          黑棋：{blackClock.secondsLeft}s（剩 {blackClock.periodsLeft} 次）
-          {byoyomi.activePlayer === blackPlayer ? " ← 当前" : ""}
-        </p>
-        <p>
-          白棋：{whiteClock.secondsLeft}s（剩 {whiteClock.periodsLeft} 次）
-          {byoyomi.activePlayer === whitePlayer ? " ← 当前" : ""}
-        </p>
+        {!byoyomiEnabled ? (
+          <p>已关闭</p>
+        ) : (
+          <>
+            <p>
+              黑棋：{blackClock.secondsLeft}s（剩 {blackClock.periodsLeft} 次）
+              {byoyomi.activePlayer === blackPlayer ? " ← 当前" : ""}
+            </p>
+            <p>
+              白棋：{whiteClock.secondsLeft}s（剩 {whiteClock.periodsLeft} 次）
+              {byoyomi.activePlayer === whitePlayer ? " ← 当前" : ""}
+            </p>
+          </>
+        )}
       </section>
 
       <section className="panel">
@@ -117,5 +125,5 @@ function formatEvent(ev: EngineEvent, state: GameState): string {
   if (ev.type === "PHASE_CHANGE") {
     return `阶段切换到 ${ev.phase}`;
   }
-  return `终局 (${ev.reason})`;
+  return `终局 (${formatReason(ev.reason)})`;
 }
