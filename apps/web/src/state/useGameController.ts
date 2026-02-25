@@ -17,19 +17,149 @@ function localPlayerFromRole(role: PeerRole): PlayerId {
   return role === "HOST" ? "P1" : "P2";
 }
 
+const BYOYOMI_SECONDS = 25;
+const BYOYOMI_PERIODS = 3;
+
+type ByoyomiEntry = {
+  secondsLeft: number;
+  periodsLeft: number;
+};
+
+export type ByoyomiState = {
+  activePlayer: PlayerId | null;
+  players: Record<PlayerId, ByoyomiEntry>;
+};
+
+function createInitialByoyomi(): ByoyomiState {
+  return {
+    activePlayer: null,
+    players: {
+      P1: { secondsLeft: BYOYOMI_SECONDS, periodsLeft: BYOYOMI_PERIODS },
+      P2: { secondsLeft: BYOYOMI_SECONDS, periodsLeft: BYOYOMI_PERIODS }
+    }
+  };
+}
+
 export function useGameController(session: ActiveSession | null) {
   const [state, setState] = useState<GameState>(() => createInitialState());
   const [events, setEvents] = useState<EngineEvent[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [remoteStatus, setRemoteStatus] = useState<"idle" | "connected" | "closed">("idle");
+  const [byoyomi, setByoyomi] = useState<ByoyomiState>(() => createInitialByoyomi());
 
   const stateRef = useRef(state);
   const seqRef = useRef(0);
   const seqGuard = useRef(new SequenceGuard());
+  const prevPhaseRef = useRef(state.phase);
+  const prevTurnRef = useRef<PlayerId | null>(null);
 
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
+
+  useEffect(() => {
+    const prevPhase = prevPhaseRef.current;
+    if (prevPhase !== "MAIN_PLAY" && state.phase === "MAIN_PLAY") {
+      setByoyomi({
+        activePlayer: state.nextToAct,
+        players: {
+          P1: { secondsLeft: BYOYOMI_SECONDS, periodsLeft: BYOYOMI_PERIODS },
+          P2: { secondsLeft: BYOYOMI_SECONDS, periodsLeft: BYOYOMI_PERIODS }
+        }
+      });
+      prevTurnRef.current = state.nextToAct;
+    } else if (state.phase !== "MAIN_PLAY") {
+      setByoyomi(createInitialByoyomi());
+      prevTurnRef.current = null;
+    }
+    prevPhaseRef.current = state.phase;
+  }, [state.phase, state.nextToAct]);
+
+  useEffect(() => {
+    if (state.phase !== "MAIN_PLAY") {
+      return;
+    }
+    if (prevTurnRef.current === state.nextToAct) {
+      return;
+    }
+    prevTurnRef.current = state.nextToAct;
+    setByoyomi((prev) => ({
+      ...prev,
+      activePlayer: state.nextToAct,
+      players: {
+        ...prev.players,
+        [state.nextToAct]: {
+          ...prev.players[state.nextToAct],
+          secondsLeft: BYOYOMI_SECONDS
+        }
+      }
+    }));
+  }, [state.phase, state.nextToAct, state.moveIndex]);
+
+  useEffect(() => {
+    if (state.phase !== "MAIN_PLAY") {
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      const live = stateRef.current;
+      if (live.phase !== "MAIN_PLAY") {
+        return;
+      }
+
+      const turn = live.nextToAct;
+      setByoyomi((prev) => {
+        const current = prev.players[turn];
+        if (current.periodsLeft <= 0) {
+          return prev;
+        }
+
+        if (current.secondsLeft > 1) {
+          return {
+            ...prev,
+            activePlayer: turn,
+            players: {
+              ...prev.players,
+              [turn]: {
+                ...current,
+                secondsLeft: current.secondsLeft - 1
+              }
+            }
+          };
+        }
+
+        if (current.periodsLeft === 1) {
+          return {
+            ...prev,
+            activePlayer: turn,
+            players: {
+              ...prev.players,
+              [turn]: {
+                secondsLeft: 0,
+                periodsLeft: 0
+              }
+            }
+          };
+        }
+
+        return {
+          ...prev,
+          activePlayer: turn,
+          players: {
+            ...prev.players,
+            [turn]: {
+              secondsLeft: BYOYOMI_SECONDS,
+              periodsLeft: current.periodsLeft - 1
+            }
+          }
+        };
+      });
+    }, 1000);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [state.phase]);
 
   const localPlayer = useMemo<PlayerId>(() => {
     if (!session) {
@@ -193,6 +323,7 @@ export function useGameController(session: ActiveSession | null) {
   return {
     state,
     score,
+    byoyomi,
     events,
     error,
     remoteStatus,

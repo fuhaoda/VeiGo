@@ -31,9 +31,9 @@ export function Board({
   movePreviewKind = "NORMAL",
   onCellClick
 }: BoardProps) {
+  const opponent: PlayerId = localPlayer === "P1" ? "P2" : "P1";
   const plus = new Set(state.config.map.plusPoints.map(coordKey));
   const minus = new Set([...state.config.map.minusPoints.map(coordKey), ...state.dynamicMinusPoints]);
-  const triggered = new Set(state.triggeredPointMarkers);
   const starPoints = getStarPointKeys(state.config.boardSize);
   const basePreviewKeys = new Set(basePreviewCoords.map(coordKey));
   const movePreviewKeys = new Set(movePreviewCoords.map(coordKey));
@@ -49,11 +49,11 @@ export function Board({
           const id = state.board[y][x];
           const key = coordKey({ x, y });
           const mark = plus.has(key) ? "+" : minus.has(key) ? "-" : "";
-          const showMark = mark && !triggered.has(key);
           const isStar = starPoints.has(key);
 
           let stoneClass = "";
           let showLastMove = false;
+          let showHiddenBadge = false;
 
           if (id) {
             const stone = state.stones[id];
@@ -65,6 +65,10 @@ export function Board({
               }
               stoneClass = classes.join(" ");
               showLastMove = lastMoveKey === key;
+              showHiddenBadge =
+                stone.kind === "HIDDEN" &&
+                stone.owner === localPlayer &&
+                !stone.visibleTo[opponent];
             }
           } else if (basePreviewKeys.has(key)) {
             stoneClass = previewColor === "B" ? "stone black preview base" : "stone white preview base";
@@ -75,6 +79,7 @@ export function Board({
                 ? `${colorClass} hidden-preview`
                 : colorClass;
           }
+          const showMark = Boolean(mark) && !stoneClass;
 
           const cellClass = [
             "board-cell",
@@ -95,6 +100,7 @@ export function Board({
               {stoneClass ? (
                 <span className={stoneClass}>
                   {showLastMove ? <span className="last-move-marker" /> : null}
+                  {showHiddenBadge ? <span className="hidden-badge">H</span> : null}
                 </span>
               ) : null}
             </button>

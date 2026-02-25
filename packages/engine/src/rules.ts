@@ -463,7 +463,7 @@ function placeMainStone(next: GameState, action: Extract<Action, { type: "PlaceS
     coord: action.coord,
     visibleTo:
       action.kind === "HIDDEN"
-        ? { P1: false, P2: false }
+        ? { [action.player]: true, [otherPlayer(action.player)]: false }
         : { P1: true, P2: true }
   };
 

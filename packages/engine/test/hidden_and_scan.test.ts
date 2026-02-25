@@ -3,12 +3,12 @@ import { applyAction } from "../src";
 import { enterMainPlay } from "./helpers";
 
 describe("hidden stone and scan", () => {
-  it("hidden stone invisible to both players until reveal, and scan miss costs -2", () => {
+  it("hidden stone visible to owner, hidden from opponent until reveal, and scan miss costs -2", () => {
     let state = enterMainPlay({ boardSize: 5, map: { size: 5, plusPoints: [], minusPoints: [] } });
 
     state = applyAction(state, { type: "PlaceStone", player: "P1", coord: { x: 2, y: 2 }, kind: "HIDDEN" }).nextState;
     const hid = state.board[2][2] as string;
-    expect(state.stones[hid].visibleTo.P1).toBe(false);
+    expect(state.stones[hid].visibleTo.P1).toBe(true);
     expect(state.stones[hid].visibleTo.P2).toBe(false);
     expect(state.scanAvailable.P2).toBe(true);
 

@@ -12,7 +12,7 @@ import { useGameController } from "../state/useGameController";
 export function RoomPage() {
   const { roomId } = useParams();
   const session = useMemo(() => getSession(), []);
-  const { state, score, events, error, remoteStatus, localPlayer, dispatchLocalAction } = useGameController(session);
+  const { state, score, byoyomi, events, error, remoteStatus, localPlayer, dispatchLocalAction } = useGameController(session);
 
   const [bidValue, setBidValue] = useState(10);
   const [moveKind, setMoveKind] = useState<"NORMAL" | "HIDDEN">("NORMAL");
@@ -173,7 +173,7 @@ export function RoomPage() {
             onCellClick={onBoardClick}
           />
         </div>
-        <HUD state={state} score={score} events={events} localPlayer={localPlayer} remoteStatus={remoteStatus} />
+        <HUD state={state} score={score} byoyomi={byoyomi} events={events} localPlayer={localPlayer} remoteStatus={remoteStatus} />
       </section>
     </main>
   );

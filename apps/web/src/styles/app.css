@@ -233,26 +233,50 @@ input[type="text"] {
   border: 1px solid rgba(74, 28, 13, 0.9);
 }
 
+.hidden-badge {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.82rem;
+  font-weight: 800;
+  line-height: 1;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
+}
+
+.stone.black .hidden-badge {
+  color: #fff8e7;
+}
+
+.stone.white .hidden-badge {
+  color: #2a2a2a;
+}
+
 .point-mark {
   position: absolute;
-  right: 6%;
-  top: 8%;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   display: grid;
   place-items: center;
   font-weight: 700;
   font-size: 0.72rem;
-  background: rgba(255, 255, 255, 0.45);
-  border-radius: 999px;
-  padding: 0 5px;
-  min-width: 16px;
+  width: 38%;
+  height: 38%;
+  border-radius: 50%;
+  z-index: 2;
+  border: 1px solid rgba(60, 46, 31, 0.5);
+  backdrop-filter: blur(0.5px);
 }
 
 .point-mark.plus {
-  color: #1f5f5b;
+  color: #e9fff8;
+  background: rgba(26, 110, 96, 0.88);
 }
 
 .point-mark.minus {
-  color: #a33b2f;
+  color: #fff0e9;
+  background: rgba(159, 64, 43, 0.88);
 }
 
 .hud {
